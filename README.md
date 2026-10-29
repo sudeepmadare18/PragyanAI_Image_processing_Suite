@@ -205,24 +205,6 @@ Open this address in your browser to use PixelCraft Image Processing Studio.
 5. View the original and processed images.
 6. Download the processed image or generated output when the relevant option is available.
 
-## 📸 Screenshots
-
-Add screenshots of the running application to demonstrate its interface and functionality.
-
-### Main Application Interface
-
-![PixelCraft Image Processing Studio application preview](screenshots/application-preview.png)
-
-*Replace this example image path with the path to your actual screenshot.*
-
-Recommended additional screenshots:
-
-- Grayscale and black-and-white conversion.
-- Pencil sketch effect.
-- Image sharpening and resizing.
-- Multiple image gallery.
-- Processed image download.
-
 ## 🔄 Application Workflow
 
 ```text
