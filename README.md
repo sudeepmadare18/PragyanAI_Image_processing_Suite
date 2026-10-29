@@ -109,9 +109,9 @@ PixelCraft-Image-Processing-Studio/
 ├── app.py
 ├── requirements.txt
 ├── README.md
-├── .gitignore
-└── screenshots/
-    └── application-preview.png
+└── .gitignore
+
+    
 ```
 
 **File descriptions:**
