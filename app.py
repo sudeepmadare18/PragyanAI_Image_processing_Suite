@@ -14,7 +14,7 @@ from streamlit_drawable_canvas import st_canvas
 # =====================================================
 
 st.set_page_config(
-    page_title="PixelCraft - Image Processing Studio",
+    page_title="Image Processing Suite",
     page_icon="🖼️",
     layout="wide"
 )
