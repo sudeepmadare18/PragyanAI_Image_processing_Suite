@@ -28,14 +28,12 @@
 - [Installation and Setup](#-installation-and-setup)
 - [How to Run](#-how-to-run)
 - [How to Use](#-how-to-use)
-- [Screenshots](#-screenshots)
 - [Application Workflow](#-application-workflow)
 - [Use Cases](#-use-cases)
 - [Future Enhancements](#-future-enhancements)
 - [Troubleshooting](#-troubleshooting)
 - [Author](#-author)
-- [License](#-license)
-
+  
 ## 📖 Overview
 
 Image processing is widely used in digital photography, computer vision, image enhancement, and visual computing. However, performing different image processing operations may require programming knowledge or multiple editing tools.
