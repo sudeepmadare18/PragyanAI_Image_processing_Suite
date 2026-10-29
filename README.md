@@ -1,4 +1,4 @@
-# 🎨 PixelCraft – Image Processing Studio
+# 🎨 Image Processing Studio
 
 PixelCraft is a web-based image processing application developed using Python and Streamlit. It allows users to upload images, apply various image processing techniques, preview the results, and download processed images through a simple, interactive interface.
 
