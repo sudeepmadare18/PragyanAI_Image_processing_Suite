@@ -8,7 +8,7 @@ The project uses GitHub for source code management and Streamlit Community Cloud
 
 🚀 **Try the application online:**
 
-[Open PixelCraft – Image Processing Studio](https://pragyanaipixelcraftimageprocessingstudio-gobjyscdr7ktsrczpgnpw.streamlit.app/)
+[Open PixelCraft – Image Processing Studio](https://pragyanaiimagestudioclass-dad7mgztbfjlmvqxnemx6p.streamlit.app/)
 
 Replace `YOUR-STREAMLIT-APP-URL` with your actual deployed Streamlit application URL.
 
