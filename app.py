@@ -5,11 +5,6 @@ import cv2
 import numpy as np
 import streamlit as st
 from PIL import Image, ImageEnhance, ImageFilter
-from streamlit_drawable_canvas import st_canvas
-
-# ==============================
-# PAGE CONFIGURATION
-# ==============================
 
 st.set_page_config(
     page_title="PragyanAI - Image Processing Suite",
@@ -20,29 +15,9 @@ st.set_page_config(
 st.title("🧠 PragyanAI - Image Processing Suite")
 st.caption(
     "Blending • Background Change • Grayscale • Sketch • Pixelation • "
-    "Resize • Multiple Images • Arithmetic & Text Removal • Noise • Combined Operations"
+    "Resize • Multiple Images • Arithmetic • Noise • Combined Operations"
 )
 
-st.markdown(
-    """
-    Upload an image and choose an operation from the sidebar.  
-    Apply image-processing techniques, preview the result, and download the output.
-    """
-)
-
-# ==============================
-# SESSION STATE
-# ==============================
-
-if "original_image" not in st.session_state:
-    st.session_state.original_image = None
-
-if "original_name" not in st.session_state:
-    st.session_state.original_name = "image.png"
-
-# ==============================
-# HELPER FUNCTIONS
-# ==============================
 
 def load_image(file):
     return Image.open(file).convert("RGB")
@@ -73,7 +48,7 @@ def download_image(image, filename):
     image.save(buffer, format="PNG")
 
     st.download_button(
-        label="⬇️ Download Processed Image",
+        "⬇️ Download Image",
         data=buffer.getvalue(),
         file_name=filename,
         mime="image/png"
@@ -83,13 +58,13 @@ def download_image(image, filename):
 def blend_images(image1, image2, alpha):
     image2 = image2.resize(image1.size, Image.Resampling.LANCZOS)
 
-    array1 = np.array(image1).astype(np.float32)
-    array2 = np.array(image2).astype(np.float32)
+    a1 = np.array(image1).astype(np.float32)
+    a2 = np.array(image2).astype(np.float32)
 
-    blended = (array1 * (1 - alpha)) + (array2 * alpha)
-    blended = np.clip(blended, 0, 255).astype(np.uint8)
+    result = (a1 * (1 - alpha)) + (a2 * alpha)
+    result = np.clip(result, 0, 255).astype(np.uint8)
 
-    return Image.fromarray(blended)
+    return Image.fromarray(result)
 
 
 def change_background(image, color):
@@ -97,11 +72,10 @@ def change_background(image, color):
     height, width = image_bgr.shape[:2]
 
     mask = np.zeros((height, width), np.uint8)
+    bg_model = np.zeros((1, 65), np.float64)
+    fg_model = np.zeros((1, 65), np.float64)
 
-    background_model = np.zeros((1, 65), np.float64)
-    foreground_model = np.zeros((1, 65), np.float64)
-
-    rectangle = (
+    rect = (
         int(width * 0.03),
         int(height * 0.03),
         int(width * 0.94),
@@ -111,14 +85,14 @@ def change_background(image, color):
     cv2.grabCut(
         image_bgr,
         mask,
-        rectangle,
-        background_model,
-        foreground_model,
+        rect,
+        bg_model,
+        fg_model,
         5,
         cv2.GC_INIT_WITH_RECT
     )
 
-    foreground_mask = np.where(
+    fg_mask = np.where(
         (mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD),
         255,
         0
@@ -127,7 +101,7 @@ def change_background(image, color):
     background = np.zeros_like(np.array(image))
     background[:] = color
 
-    alpha = foreground_mask[:, :, None] / 255.0
+    alpha = fg_mask[:, :, None] / 255.0
 
     result = (
         np.array(image) * alpha +
@@ -137,7 +111,7 @@ def change_background(image, color):
     return Image.fromarray(result)
 
 
-def convert_grayscale(image):
+def make_grayscale(image):
     return image.convert("L").convert("RGB")
 
 
@@ -183,13 +157,13 @@ def resize_image(image, scale):
 def image_arithmetic(image1, image2, operation):
     image2 = image2.resize(image1.size, Image.Resampling.LANCZOS)
 
-    array1 = np.array(image1).astype(np.int16)
-    array2 = np.array(image2).astype(np.int16)
+    a1 = np.array(image1).astype(np.int16)
+    a2 = np.array(image2).astype(np.int16)
 
     if operation == "Addition":
-        result = np.clip(array1 + array2, 0, 255)
+        result = np.clip(a1 + a2, 0, 255)
     else:
-        result = np.abs(array1 - array2)
+        result = np.abs(a1 - a2)
 
     return Image.fromarray(result.astype(np.uint8))
 
@@ -215,14 +189,11 @@ def add_noise(image, noise_type, strength):
     return Image.fromarray(noisy)
 
 
-def remove_text(image, mask):
+def remove_text_area(image, x, y, width, height):
     image_bgr = pil_to_cv(image)
 
-    mask = cv2.dilate(
-        mask,
-        np.ones((3, 3), np.uint8),
-        iterations=2
-    )
+    mask = np.zeros(image_bgr.shape[:2], np.uint8)
+    mask[y:y + height, x:x + width] = 255
 
     result_bgr = cv2.inpaint(
         image_bgr,
@@ -238,28 +209,24 @@ def remove_text(image, mask):
 # SIDEBAR
 # ==============================
 
-st.sidebar.title("⚙️ Image Processing Controls")
+st.sidebar.title("⚙️ Controls")
 
 uploaded_file = st.sidebar.file_uploader(
     "Upload main image",
     type=["png", "jpg", "jpeg", "bmp", "webp"]
 )
 
-if uploaded_file is not None:
-    st.session_state.original_image = load_image(uploaded_file)
-    st.session_state.original_name = uploaded_file.name
-
-if st.session_state.original_image is None:
-    st.info("👈 Upload an image using the sidebar to begin.")
+if uploaded_file is None:
+    st.info("👈 Upload an image using the sidebar.")
     st.stop()
 
-original = st.session_state.original_image
+original = load_image(uploaded_file)
 
-st.sidebar.success(f"Loaded: {st.session_state.original_name}")
+st.sidebar.success(f"Loaded: {uploaded_file.name}")
 st.sidebar.caption(f"Size: {original.width} × {original.height} pixels")
 
 operation = st.sidebar.radio(
-    "Choose an operation",
+    "Choose operation",
     [
         "1. Image Blending",
         "2. Background Change",
@@ -274,9 +241,6 @@ operation = st.sidebar.radio(
     ]
 )
 
-st.sidebar.divider()
-st.sidebar.caption("PragyanAI - Image Processing Suite")
-
 # ==============================
 # 1. IMAGE BLENDING
 # ==============================
@@ -286,17 +250,13 @@ if operation == "1. Image Blending":
 
     second_file = st.file_uploader(
         "Upload second image",
-        type=["png", "jpg", "jpeg", "bmp", "webp"],
-        key="blend_upload"
+        type=["png", "jpg", "jpeg", "bmp", "webp"]
     )
 
     if second_file:
         second_image = load_image(second_file)
 
-        alpha = st.slider(
-            "Second image opacity",
-            0.0, 1.0, 0.5, 0.05
-        )
+        alpha = st.slider("Second image opacity", 0.0, 1.0, 0.5, 0.05)
 
         result = blend_images(original, second_image, alpha)
 
@@ -304,7 +264,7 @@ if operation == "1. Image Blending":
         download_image(result, "blended_image.png")
 
     else:
-        st.info("Upload a second image to blend.")
+        st.info("Upload a second image.")
 
 # ==============================
 # 2. BACKGROUND CHANGE
@@ -313,10 +273,7 @@ if operation == "1. Image Blending":
 elif operation == "2. Background Change":
     st.header("2. Background Change")
 
-    color_hex = st.color_picker(
-        "Choose new background color",
-        "#00AEEF"
-    )
+    color_hex = st.color_picker("New background color", "#00AEEF")
 
     color = tuple(
         int(color_hex.lstrip("#")[i:i + 2], 16)
@@ -324,7 +281,7 @@ elif operation == "2. Background Change":
     )
 
     if st.button("Change Background"):
-        with st.spinner("Processing background..."):
+        with st.spinner("Processing..."):
             try:
                 result = change_background(original, color)
 
@@ -341,7 +298,7 @@ elif operation == "2. Background Change":
 elif operation == "3. Grayscale Conversion":
     st.header("3. Color to Black & White")
 
-    result = convert_grayscale(original)
+    result = make_grayscale(original)
 
     show_result(original, result, "Grayscale Image")
     download_image(result, "grayscale_image.png")
@@ -366,14 +323,14 @@ elif operation == "5. Image Pixelation":
     st.header("5. Image Pixel Size")
 
     block_size = st.select_slider(
-        "Select pixel block size",
+        "Pixel block size",
         options=[8, 16, 32, 64],
         value=16
     )
 
     result = pixelate_image(original, block_size)
 
-    show_result(original, result, f"Pixelated Image - {block_size}px")
+    show_result(original, result, f"Pixelated - {block_size}px")
     download_image(result, f"pixelated_{block_size}.png")
 
 # ==============================
@@ -383,26 +340,18 @@ elif operation == "5. Image Pixelation":
 elif operation == "6. Image Shape and Size":
     st.header("6. Image Shape and Size")
 
-    st.info(
-        "This changes the image dimensions using a selected scale percentage."
-    )
-
     scale = st.select_slider(
-        "Select image size",
+        "Image size",
         options=[8, 16, 32, 64, 100, 150, 200],
         value=100
     )
 
     result = resize_image(original, scale)
 
-    st.write(
-        f"Original size: **{original.width} × {original.height}** pixels"
-    )
-    st.write(
-        f"New size: **{result.width} × {result.height}** pixels"
-    )
+    st.write(f"Original: {original.width} × {original.height} pixels")
+    st.write(f"New: {result.width} × {result.height} pixels")
 
-    show_result(original, result, f"Resized Image - {scale}%")
+    show_result(original, result, f"Resized - {scale}%")
     download_image(result, f"resized_{scale}.png")
 
 # ==============================
@@ -469,11 +418,11 @@ elif operation == "7. Multiple Images":
         st.info("Upload one or more images.")
 
 # ==============================
-# 8. ADDITION, SUBTRACTION & TEXT REMOVAL
+# 8. ARITHMETIC & TEXT REMOVAL
 # ==============================
 
 elif operation == "8. Addition, Subtraction & Text Removal":
-    st.header("8. Image Addition, Subtraction & Text Removal")
+    st.header("8. Addition, Subtraction & Text Removal")
 
     sub_operation = st.radio(
         "Choose operation",
@@ -485,7 +434,7 @@ elif operation == "8. Addition, Subtraction & Text Removal":
         second_file = st.file_uploader(
             "Upload second image",
             type=["png", "jpg", "jpeg", "bmp", "webp"],
-            key="arithmetic_upload"
+            key="arithmetic"
         )
 
         if second_file:
@@ -507,103 +456,62 @@ elif operation == "8. Addition, Subtraction & Text Removal":
             st.info("Upload a second image.")
 
     else:
-        st.write(
-            "Paint over the text or object you want to remove, then click remove."
+        st.info(
+            "Enter the area where the text or object is present. "
+            "The app will fill that area using surrounding pixels."
         )
 
-        max_width = 700
-        max_height = 600
+        col1, col2 = st.columns(2)
 
-        scale = min(
-            max_width / original.width,
-            max_height / original.height,
-            1.0
-        )
+        with col1:
+            x = st.number_input("X position", 0, original.width - 1, 50)
 
-        canvas_width = int(original.width * scale)
-        canvas_height = int(original.height * scale)
+        with col2:
+            y = st.number_input("Y position", 0, original.height - 1, 50)
 
-        canvas_background = original.resize(
-            (canvas_width, canvas_height),
-            Image.Resampling.LANCZOS
-        )
+        col3, col4 = st.columns(2)
 
-        brush_size = st.slider(
-            "Brush size",
-            3, 60, 18
-        )
+        with col3:
+            width = st.number_input(
+                "Area width",
+                1, original.width, 200
+            )
 
-        canvas_result = st_canvas(
-            fill_color="rgba(255, 0, 0, 1.0)",
-            stroke_width=brush_size,
-            stroke_color="#FF0000",
-            background_image=canvas_background,
-            update_streamlit=True,
-            height=canvas_height,
-            width=canvas_width,
-            drawing_mode="freedraw",
-            return_image_data=True,
-            key="text_removal_canvas"
-        )
+        with col4:
+            height = st.number_input(
+                "Area height",
+                1, original.height, 60
+            )
 
-        if st.button("Remove Marked Text / Object"):
-            if canvas_result.image_data is None:
-                st.error("Please paint over the text first.")
-
-            else:
-                canvas_array = np.asarray(canvas_result.image_data)
-
-                red = canvas_array[:, :, 0].astype(np.int16)
-                green = canvas_array[:, :, 1].astype(np.int16)
-                blue = canvas_array[:, :, 2].astype(np.int16)
-
-                small_mask = np.where(
-                    (red > 100) &
-                    (red > green * 1.25) &
-                    (red > blue * 1.25),
-                    255,
-                    0
-                ).astype(np.uint8)
-
-                full_mask = cv2.resize(
-                    small_mask,
-                    (original.width, original.height),
-                    interpolation=cv2.INTER_NEAREST
+        if st.button("Remove Text / Object"):
+            try:
+                result = remove_text_area(
+                    original,
+                    int(x),
+                    int(y),
+                    int(width),
+                    int(height)
                 )
 
-                if cv2.countNonZero(full_mask) == 0:
-                    st.error("No marked area detected. Paint again.")
+                show_result(original, result, "Text Removed")
+                download_image(result, "text_removed.png")
 
-                else:
-                    result = remove_text(original, full_mask)
-
-                    show_result(
-                        original,
-                        result,
-                        "Text / Object Removed"
-                    )
-
-                    download_image(
-                        result,
-                        "text_removed.png"
-                    )
+            except Exception as error:
+                st.error(f"Text removal failed: {error}")
 
 # ==============================
 # 9. ADD NOISE
 # ==============================
 
 elif operation == "9. Add Noise":
-    st.header("9. Add Noise to Image")
+    st.header("9. Add Noise")
 
     noise_type = st.selectbox(
         "Noise type",
         ["Gaussian Noise", "Salt & Pepper Noise"]
     )
 
-    strength = st.slider(
-        "Noise strength",
-        1, 100, 20
-    )
+    strength = st.slider("Noise strength", 1, 100, 20)
 
     if st.button("Apply Noise"):
         result = add_noise(original, noise_type, strength)
@@ -612,7 +520,7 @@ elif operation == "9. Add Noise":
         download_image(result, "noisy_image.png")
 
 # ==============================
-# 10. MULTIPLE IMAGE OPERATIONS
+# 10. MULTIPLE OPERATIONS
 # ==============================
 
 elif operation == "10. Multiple Image Operations":
@@ -628,15 +536,13 @@ elif operation == "10. Multiple Image Operations":
     result = original.copy()
 
     if grayscale:
-        result = convert_grayscale(result)
+        result = make_grayscale(result)
 
     if sketch:
         result = make_sketch(result)
 
     if blur:
-        result = result.filter(
-            ImageFilter.GaussianBlur(radius=2)
-        )
+        result = result.filter(ImageFilter.GaussianBlur(radius=2))
 
     if sharpen:
         result = ImageEnhance.Sharpness(result).enhance(2.0)
