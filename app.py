@@ -19,7 +19,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🖼️ PixelCraft — Image Processing Studio")
+st.title("🖼️ Image Processing Suite")
 st.write(
     "Upload your image once, select an operation, "
     "edit your image, and download the result."
