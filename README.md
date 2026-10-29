@@ -108,8 +108,8 @@ PixelCraft-Image-Processing-Studio/
 │
 ├── app.py
 ├── requirements.txt
-├── README.md
-└── .gitignore
+└── README.md
+
 
     
 ```
@@ -119,10 +119,8 @@ PixelCraft-Image-Processing-Studio/
 - `app.py` — Main Streamlit application containing the interface and image processing logic.
 - `requirements.txt` — Python dependencies required to run the project.
 - `README.md` — Project documentation.
-- `.gitignore` — Specifies files and folders Git should ignore.
-- `screenshots/` — Stores application screenshots.
 
-*The `.gitignore` and `screenshots/` entries are optional if you have not created them yet.*
+
 
 ## 🚀 Installation and Setup
 
